@@ -14,13 +14,12 @@ export async function POST(request) {
         const prompt = `
 You are ROOT, an AI learning diagnostic for introductory electrical engineering.
 
-Your job is NOT simply to give the student the correct answer.
+Analyze the student's problem and answer.
 
-Your job is to identify the likely underlying concept or misconception
-that caused the student's mistake.
+Your purpose is to identify the underlying concept or misconception
+that may have caused the mistake, rather than simply giving the answer.
 
 SUPPORTED TOPICS:
-
 - Basic Algebra
 - Voltage
 - Current
@@ -39,30 +38,25 @@ ${problem}
 STUDENT ANSWER:
 ${answer}
 
-Analyze the problem carefully.
-
 Determine:
 
 1. Whether the student's answer is correct.
 2. The correct answer.
 3. The most likely underlying concept gap.
-4. A short explanation of the misconception.
+4. A concise explanation of the misconception.
 5. Which prerequisite concepts appear understood.
-6. A short micro-lesson that repairs the missing concept.
-7. One new diagnostic question testing the same concept.
-8. Three answer choices for that diagnostic question.
+6. A short micro-lesson.
+7. One diagnostic question testing the same concept.
+8. Three answer choices.
 9. Which answer choice is correct.
 
-IMPORTANT:
-
+Rules:
 - Perform the mathematics yourself.
-- If the student's answer is actually correct, say so.
+- If the answer is correct, say so.
+- Do not invent information.
 - Keep explanations appropriate for a beginner engineering student.
-- Choose the root concept from the supported topics whenever possible.
-- Do not invent information that is not present in the problem.
-- Do not merely say "wrong calculation" if a deeper conceptual explanation is possible.
-- Keep the micro-lesson concise.
-- The diagnostic question should test understanding, not memorization.
+- Prefer one of the supported topics as the root concept.
+- The diagnostic question should test understanding.
 `;
 
         const response = await fetch(
@@ -129,12 +123,7 @@ IMPORTANT:
                                                 type: "string"
                                             }
 
-                                        },
-
-                                        required: [
-                                            "name",
-                                            "status"
-                                        ]
+                                        }
                                     }
                                 },
 
@@ -157,20 +146,7 @@ IMPORTANT:
                                 correct_option: {
                                     type: "integer"
                                 }
-
-                            },
-
-                            required: [
-                                "is_correct",
-                                "correct_answer",
-                                "likely_concept",
-                                "misconception",
-                                "prerequisites",
-                                "micro_lesson",
-                                "diagnostic_question",
-                                "diagnostic_options",
-                                "correct_option"
-                            ]
+                            }
                         }
                     }
                 })
@@ -178,22 +154,25 @@ IMPORTANT:
         );
 
 
+        const responseText = await response.text();
+
+        console.log("Gemini status:", response.status);
+        console.log("Gemini response:", responseText);
+
+
         if (!response.ok) {
-
-            const errorText = await response.text();
-
-            console.error("Gemini error:", errorText);
 
             return Response.json(
                 {
-                    error: "Gemini API request failed."
+                    error: `Gemini API error (${response.status}): ${responseText}`
                 },
                 { status: 500 }
             );
+
         }
 
 
-        const data = await response.json();
+        const data = JSON.parse(responseText);
 
         const text =
             data.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -218,11 +197,11 @@ IMPORTANT:
 
     } catch (error) {
 
-        console.error("Server error:", error);
+        console.error("ROOT server error:", error);
 
         return Response.json(
             {
-                error: "Something went wrong while analyzing the problem."
+                error: error.message
             },
             { status: 500 }
         );

@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>ROOT — Find the concept behind the mistake</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+
+        <div class="logo">
+            ROOT<span>.</span>
+        </div>
+
+        <div class="tagline">
+            Find the concept behind the mistake.
+        </div>
+
+    </nav>
+
+
+    <!-- Main Application -->
+    <main class="app-container">
+
+
+        <!-- LANDING SCREEN -->
+        <section id="landing-screen" class="screen active">
+
+            <div class="hero">
+
+                <div class="hero-badge">
+                    AI LEARNING DIAGNOSTIC
+                </div>
+
+                <h1>
+                    Don't just fix the answer.
+                    <span>Find the root.</span>
+                </h1>
+
+                <p class="hero-description">
+                    ROOT analyzes your mistakes to identify the underlying
+                    concept you may be missing, then helps you repair it.
+                </p>
+
+                <button id="start-btn" class="primary-button">
+                    Diagnose a problem →
+                </button>
+
+            </div>
+
+
+            <div class="how-it-works">
+
+                <div class="step">
+                    <div class="step-number">01</div>
+                    <h3>Submit</h3>
+                    <p>Enter a question you got wrong.</p>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">02</div>
+                    <h3>Diagnose</h3>
+                    <p>ROOT identifies the likely concept gap.</p>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">03</div>
+                    <h3>Repair</h3>
+                    <p>Learn the missing concept and try again.</p>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- INPUT SCREEN -->
+        <section id="input-screen" class="screen">
+
+            <div class="section-header">
+
+                <button class="back-button" id="back-to-home">
+                    ← Back
+                </button>
+
+                <div class="hero-badge">
+                    STEP 01 · SUBMIT
+                </div>
+
+                <h2>
+                    What problem did you get wrong?
+                </h2>
+
+                <p>
+                    Give ROOT the question and your answer.
+                    We'll look beyond the mistake.
+                </p>
+
+            </div>
+
+
+            <div class="problem-card">
+
+                <label for="problem">
+                    Question
+                </label>
+
+                <textarea
+                    id="problem"
+                    placeholder="Example: A 12V battery is connected to a 6Ω resistor. Find the current through the resistor."
+                ></textarea>
+
+
+                <label for="answer">
+                    Your answer
+                </label>
+
+                <input
+                    type="text"
+                    id="answer"
+                    placeholder="Example: 0.5 A"
+                >
+
+
+                <button id="diagnose-btn" class="primary-button full-width">
+                    Analyze my mistake →
+                </button>
+
+            </div>
+
+        </section>
+
+
+        <!-- DIAGNOSIS SCREEN -->
+        <section id="diagnosis-screen" class="screen">
+
+            <div class="section-header">
+
+                <div class="hero-badge">
+                    STEP 02 · DIAGNOSIS
+                </div>
+
+                <h2>
+                    Let's look beneath the mistake.
+                </h2>
+
+                <p>
+                    ROOT has identified a likely concept gap.
+                </p>
+
+            </div>
+
+
+            <div class="diagnosis-grid">
+
+
+                <!-- Mistake -->
+                <div class="diagnosis-card mistake-card">
+
+                    <div class="card-label">
+                        YOUR ANSWER
+                    </div>
+
+                    <div id="user-answer" class="big-answer">
+                        0.5 A
+                    </div>
+
+                    <div class="incorrect">
+                        ✕ Incorrect
+                    </div>
+
+                </div>
+
+
+                <!-- Root Cause -->
+                <div class="diagnosis-card root-card">
+
+                    <div class="card-label">
+                        LIKELY ROOT CAUSE
+                    </div>
+
+                    <h3 id="root-concept">
+                        Formula selection
+                    </h3>
+
+                    <p id="root-description">
+                        You may be confusing the relationship between
+                        voltage, current and resistance.
+                    </p>
+
+                    <button id="repair-btn" class="secondary-button">
+                        Repair this concept →
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <!-- Knowledge Map -->
+
+            <div class="knowledge-section">
+
+                <div class="card-label">
+                    CONCEPT MAP
+                </div>
+
+                <div class="knowledge-map">
+
+                    <div class="concept completed">
+                        <span>✓</span>
+                        Voltage
+                    </div>
+
+                    <div class="connection"></div>
+
+                    <div class="concept completed">
+                        <span>✓</span>
+                        Resistance
+                    </div>
+
+                    <div class="connection"></div>
+
+                    <div class="concept warning">
+                        <span>!</span>
+                        Ohm's Law
+                    </div>
+
+                    <div class="connection"></div>
+
+                    <div class="concept missing">
+                        <span>?</span>
+                        Formula Selection
+                    </div>
+
+                    <div class="connection"></div>
+
+                    <div class="concept future">
+                        Circuit Analysis
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- REPAIR SCREEN -->
+        <section id="repair-screen" class="screen">
+
+            <div class="section-header">
+
+                <div class="hero-badge">
+                    STEP 03 · REPAIR
+                </div>
+
+                <h2>
+                    Let's repair the missing concept.
+                </h2>
+
+                <p>
+                    A short explanation, then one question.
+                </p>
+
+            </div>
+
+
+            <div class="lesson-card">
+
+                <div class="card-label">
+                    MICRO-LESSON
+                </div>
+
+                <h2>
+                    Ohm's Law
+                </h2>
+
+                <p>
+                    Ohm's Law describes the relationship between
+                    voltage, current and resistance.
+                </p>
+
+
+                <div class="formula">
+                    <span>I</span>
+                    =
+                    <span>V</span>
+                    /
+                    <span>R</span>
+                </div>
+
+
+                <div class="example-box">
+
+                    <strong>Example</strong>
+
+                    <p>
+                        A 12V source is connected to a 6Ω resistor.
+                    </p>
+
+                    <div class="calculation">
+                        I = 12 / 6 = <strong>2 A</strong>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="quiz-card">
+
+                <div class="card-label">
+                    QUICK CHECK
+                </div>
+
+                <h3>
+                    A 10V source is connected to a 5Ω resistor.
+                    What is the current?
+                </h3>
+
+
+                <div class="quiz-options">
+
+                    <button class="quiz-option" data-answer="wrong">
+                        0.5 A
+                    </button>
+
+                    <button class="quiz-option" data-answer="correct">
+                        2 A
+                    </button>
+
+                    <button class="quiz-option" data-answer="wrong">
+                        5 A
+                    </button>
+
+                </div>
+
+
+                <div id="quiz-feedback" class="quiz-feedback"></div>
+
+            </div>
+
+        </section>
+
+
+        <!-- SUCCESS SCREEN -->
+        <section id="success-screen" class="screen">
+
+            <div class="success">
+
+                <div class="success-icon">
+                    ✓
+                </div>
+
+                <div class="hero-badge">
+                    CONCEPT REPAIRED
+                </div>
+
+                <h1>
+                    You're ready to try again.
+                </h1>
+
+                <p>
+                    You identified the missing concept,
+                    repaired it, and passed the diagnostic.
+                </p>
+
+                <button id="retry-btn" class="primary-button">
+                    Retry the original problem →
+                </button>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <footer>
+
+        <span>ROOT</span>
+
+        <span>
+            AI-assisted learning diagnostic
+        </span>
+
+    </footer>
+
+
+    <script src="script.js"></script>
+
+</body>
+</html>

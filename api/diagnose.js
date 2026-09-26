@@ -5,25 +5,22 @@ export async function POST(request) {
         const { problem, answer } = await request.json();
 
         if (!problem || !answer) {
-
             return Response.json(
-                {
-                    error: "Problem and answer are required."
-                },
+                { error: "Problem and answer are required." },
                 { status: 400 }
             );
-
         }
-
 
         const prompt = `
 You are ROOT, an AI learning diagnostic for introductory electrical engineering.
 
 Your job is NOT simply to give the student the correct answer.
 
-Your job is to identify the likely underlying concept or misconception that caused the student's mistake.
+Your job is to identify the likely underlying concept or misconception
+that caused the student's mistake.
 
 SUPPORTED TOPICS:
+
 - Basic Algebra
 - Voltage
 - Current
@@ -45,6 +42,7 @@ ${answer}
 Analyze the problem carefully.
 
 Determine:
+
 1. Whether the student's answer is correct.
 2. The correct answer.
 3. The most likely underlying concept gap.
@@ -52,18 +50,20 @@ Determine:
 5. Which prerequisite concepts appear understood.
 6. A short micro-lesson that repairs the missing concept.
 7. One new diagnostic question testing the same concept.
-8. Three answer choices for the diagnostic question.
+8. Three answer choices for that diagnostic question.
 9. Which answer choice is correct.
 
 IMPORTANT:
-- Do not invent information that is not present in the problem.
+
 - Perform the mathematics yourself.
 - If the student's answer is actually correct, say so.
 - Keep explanations appropriate for a beginner engineering student.
 - Choose the root concept from the supported topics whenever possible.
+- Do not invent information that is not present in the problem.
 - Do not merely say "wrong calculation" if a deeper conceptual explanation is possible.
+- Keep the micro-lesson concise.
+- The diagnostic question should test understanding, not memorization.
 `;
-
 
         const response = await fetch(
             "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
@@ -117,7 +117,6 @@ IMPORTANT:
                                     type: "array",
 
                                     items: {
-
                                         type: "object",
 
                                         properties: {
@@ -183,7 +182,7 @@ IMPORTANT:
 
             const errorText = await response.text();
 
-            console.error(errorText);
+            console.error("Gemini error:", errorText);
 
             return Response.json(
                 {
@@ -204,7 +203,7 @@ IMPORTANT:
 
             return Response.json(
                 {
-                    error: "No response received from Gemini."
+                    error: "Gemini returned no usable response."
                 },
                 { status: 500 }
             );
@@ -214,13 +213,12 @@ IMPORTANT:
 
         const diagnosis = JSON.parse(text);
 
-
         return Response.json(diagnosis);
 
 
     } catch (error) {
 
-        console.error(error);
+        console.error("Server error:", error);
 
         return Response.json(
             {

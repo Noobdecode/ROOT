@@ -1,4 +1,8 @@
-const MODEL = "gemini-3.5-flash-lite";
+const MODELS = [
+    "gemini-3.1-flash-lite",
+    "gemini-3.5-flash-lite"
+];
+
 
 const sleep = (ms) =>
     new Promise(resolve => setTimeout(resolve, ms));
@@ -6,84 +10,154 @@ const sleep = (ms) =>
 
 async function callGemini(prompt) {
 
-    const maxAttempts = 4;
+    let lastError = null;
 
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
 
-        const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,
-            {
-                method: "POST",
+    for (const MODEL of MODELS) {
 
-                headers: {
-                    "Content-Type": "application/json",
-                    "x-goog-api-key": process.env.GEMINI_API_KEY
-                },
+        console.log("Trying Gemini model:", MODEL);
 
-                body: JSON.stringify({
 
-                    contents: [
-                        {
-                            parts: [
+        for (let attempt = 1; attempt <= 3; attempt++) {
+
+            try {
+
+                const response = await fetch(
+                    `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type": "application/json",
+                            "x-goog-api-key":
+                                process.env.GEMINI_API_KEY
+                        },
+
+                        body: JSON.stringify({
+
+                            contents: [
                                 {
-                                    text: prompt
+                                    parts: [
+                                        {
+                                            text: prompt
+                                        }
+                                    ]
                                 }
-                            ]
-                        }
-                    ],
+                            ],
 
-                    generationConfig: {
-                        responseMimeType: "application/json"
+                            generationConfig: {
+                                responseMimeType:
+                                    "application/json"
+                            }
+
+                        })
                     }
-
-                })
-            }
-        );
+                );
 
 
-        const responseText = await response.text();
+                const responseText =
+                    await response.text();
 
 
-        if (response.ok) {
-            return JSON.parse(responseText);
-        }
+                // SUCCESS
 
+                if (response.ok) {
 
-        console.error(
-            `Gemini attempt ${attempt} failed:`,
-            response.status,
-            responseText
-        );
-
-
-        // Retry temporary server/rate-limit errors.
-        if (
-            response.status === 429 ||
-            response.status === 500 ||
-            response.status === 502 ||
-            response.status === 503 ||
-            response.status === 504
-        ) {
-
-            if (attempt < maxAttempts) {
-
-                const delay =
-                    Math.min(
-                        1000 * Math.pow(2, attempt - 1),
-                        8000
+                    console.log(
+                        "Gemini succeeded with:",
+                        MODEL
                     );
 
-                await sleep(delay);
+                    return JSON.parse(
+                        responseText
+                    );
+                }
 
-                continue;
+
+                console.error(
+                    `Gemini ${MODEL} attempt ${attempt} failed:`,
+                    response.status,
+                    responseText
+                );
+
+
+                lastError =
+                    new Error(
+                        `Gemini ${MODEL} returned ${response.status}`
+                    );
+
+
+                // Retry temporary errors
+
+                if (
+                    response.status === 429 ||
+                    response.status === 500 ||
+                    response.status === 502 ||
+                    response.status === 503 ||
+                    response.status === 504
+                ) {
+
+                    if (attempt < 3) {
+
+                        await sleep(
+                            1000 *
+                            Math.pow(
+                                2,
+                                attempt - 1
+                            )
+                        );
+
+                        continue;
+                    }
+
+
+                    // All retries for this model failed.
+                    // Move to the next model.
+
+                    break;
+                }
+
+
+                // Non-temporary error:
+                // don't keep retrying it.
+
+                throw new Error(
+                    `Gemini API error (${response.status}): ${responseText}`
+                );
+
+            } catch (error) {
+
+                lastError = error;
+
+                console.error(
+                    "Gemini request error:",
+                    error
+                );
+
+
+                if (attempt < 3) {
+
+                    await sleep(
+                        1000 *
+                        Math.pow(
+                            2,
+                            attempt - 1
+                        )
+                    );
+
+                }
+
             }
+
         }
 
-
-        throw new Error(
-            `Gemini API error (${response.status}): ${responseText}`
-        );
     }
+
+
+    throw lastError ||
+        new Error(
+            "All Gemini models failed."
+        );
 }
 
 
@@ -91,8 +165,10 @@ export async function POST(request) {
 
     try {
 
-        const { problem, answer } =
-            await request.json();
+        const {
+            problem,
+            answer
+        } = await request.json();
 
 
         if (!problem || !answer) {
@@ -170,7 +246,7 @@ Rules:
 - Keep explanations suitable for a beginner engineering student.
 - Do not invent information.
 - Prefer concepts from the supported concept list.
-- Include 3 diagnostic answer choices.
+- Include exactly 3 diagnostic answer choices.
 - correct_option must be 0, 1, or 2.
 - Keep the micro-lesson concise.
 - The diagnostic question should test understanding
@@ -199,7 +275,9 @@ Rules:
             JSON.parse(text);
 
 
-        return Response.json(diagnosis);
+        return Response.json(
+            diagnosis
+        );
 
 
     } catch (error) {
@@ -212,7 +290,8 @@ Rules:
 
         return Response.json(
             {
-                error: error.message
+                error:
+                    error.message
             },
             {
                 status: 500

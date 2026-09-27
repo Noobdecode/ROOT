@@ -5,8 +5,11 @@ let originalProblem = "";
 let originalAnswer = "";
 
 
-function showScreen(id) {
+// ===============================
+// SCREEN NAVIGATION
+// ===============================
 
+function showScreen(id) {
     screens.forEach(screen => {
         screen.classList.remove("active");
     });
@@ -20,67 +23,67 @@ function showScreen(id) {
 }
 
 
-/* ---------------------------
-   NAVIGATION
----------------------------- */
+// ===============================
+// LANDING PAGE
+// ===============================
 
-document
-    .getElementById("start-btn")
-    .addEventListener("click", () => {
+document.getElementById("start-btn").addEventListener("click", () => {
+    showScreen("input-screen");
+});
 
-        showScreen("input-screen");
-
-    });
-
-
-document
-    .getElementById("back-to-home")
-    .addEventListener("click", () => {
-
-        showScreen("landing-screen");
-
-    });
+document.getElementById("back-to-home").addEventListener("click", () => {
+    showScreen("landing-screen");
+});
 
 
-/* ---------------------------
-   DIAGNOSE WITH AI
----------------------------- */
+// ===============================
+// AI DIAGNOSIS
+// ===============================
 
-document
-    .getElementById("diagnose-btn")
-    .addEventListener("click", async () => {
+document.getElementById("diagnose-btn").addEventListener("click", async () => {
 
-        const problem =
-            document.getElementById("problem").value.trim();
+    const problem =
+        document.getElementById("problem").value.trim();
 
-        const answer =
-            document.getElementById("answer").value.trim();
+    const answer =
+        document.getElementById("answer").value.trim();
 
-        const button =
-            document.getElementById("diagnose-btn");
+    const button =
+        document.getElementById("diagnose-btn");
 
 
-        if (!problem || !answer) {
+    // Make sure both fields are filled
 
-            alert("Please enter both the question and your answer.");
+    if (!problem || !answer) {
 
-            return;
-        }
+        alert(
+            "Please enter both the question and your answer."
+        );
 
-
-        originalProblem = problem;
-        originalAnswer = answer;
-
-
-        button.disabled = true;
-
-        button.textContent = "Analyzing your mistake...";
+        return;
+    }
 
 
-        try {
+    // Save the original submission
 
-            const response = await fetch("/api/diagnose", {
+    originalProblem = problem;
+    originalAnswer = answer;
 
+
+    // Loading state
+
+    button.disabled = true;
+    button.textContent = "Analyzing your mistake...";
+
+
+    try {
+
+        console.log("Sending problem to ROOT AI...");
+
+
+        const response = await fetch(
+            "/api/diagnose",
+            {
                 method: "POST",
 
                 headers: {
@@ -88,64 +91,84 @@ document
                 },
 
                 body: JSON.stringify({
-                    problem,
-                    answer
+                    problem: problem,
+                    answer: answer
                 })
-
-            });
-
-
-            const data = await response.json();
-
-
-            if (!response.ok) {
-
-                throw new Error(
-                    data.error || "Diagnosis failed."
-                );
-
             }
+        );
 
 
-            currentDiagnosis = data;
-
-            updateDiagnosisScreen(data);
-
-            updateRepairScreen(data);
-
-            showScreen("diagnosis-screen");
+        const data = await response.json();
 
 
-        } catch (error) {
+        console.log("ROOT AI response:", data);
 
-            console.error(error);
 
-            alert(
-                "ROOT could not analyze the problem.\n\n" +
-                error.message
+        if (!response.ok) {
+
+            throw new Error(
+                data.error ||
+                "Diagnosis failed."
             );
-
-        } finally {
-
-            button.disabled = false;
-
-            button.textContent =
-                "Analyze my mistake →";
-
         }
 
-    });
+
+        // Store diagnosis
+
+        currentDiagnosis = data;
 
 
-/* ---------------------------
-   UPDATE DIAGNOSIS SCREEN
----------------------------- */
+        // Update the interface
+
+        updateDiagnosisScreen(data);
+
+        updateRepairScreen(data);
+
+
+        // Go to diagnosis
+
+        showScreen("diagnosis-screen");
+
+
+    } catch (error) {
+
+        console.error(
+            "ROOT diagnosis error:",
+            error
+        );
+
+
+        alert(
+            "ROOT could not analyze the problem.\n\n" +
+            error.message
+        );
+
+
+    } finally {
+
+        button.disabled = false;
+
+        button.textContent =
+            "Analyze my mistake →";
+    }
+
+});
+
+
+// ===============================
+// UPDATE DIAGNOSIS SCREEN
+// ===============================
 
 function updateDiagnosisScreen(data) {
 
-    document.getElementById("user-answer").textContent =
-        originalAnswer;
+    // Student answer
 
+    document.getElementById(
+        "user-answer"
+    ).textContent = originalAnswer;
+
+
+    // Correct / incorrect status
 
     const status =
         document.querySelector(".incorrect");
@@ -153,112 +176,157 @@ function updateDiagnosisScreen(data) {
 
     if (data.is_correct) {
 
-        status.textContent =
-            "✓ Correct";
+        status.textContent = "✓ Correct";
 
-        status.style.color =
-            "#a8ff60";
+        status.style.color = "#a8ff60";
 
     } else {
 
-        status.textContent =
-            "✕ Incorrect";
+        status.textContent = "✕ Incorrect";
 
-        status.style.color =
-            "#ff6262";
-
+        status.style.color = "#ff6262";
     }
 
 
-    document.getElementById("root-concept").textContent =
+    // Root concept
+
+    document.getElementById(
+        "root-concept"
+    ).textContent =
         data.likely_concept;
 
 
-    document.getElementById("root-description").textContent =
+    // Explanation
+
+    document.getElementById(
+        "root-description"
+    ).textContent =
         data.misconception;
 
+
+    // ===========================
+    // KNOWLEDGE MAP
+    // ===========================
 
     const map =
         document.querySelector(".knowledge-map");
 
 
+    // Remove old hard-coded concepts
+
     map.innerHTML = "";
 
 
-    data.prerequisites.forEach((concept, index) => {
+    if (
+        data.prerequisites &&
+        Array.isArray(data.prerequisites)
+    ) {
 
-        const conceptElement =
-            document.createElement("div");
+        data.prerequisites.forEach(
+            (concept, index) => {
 
-        conceptElement.className =
-            "concept";
-
-
-        const status =
-            concept.status.toLowerCase();
-
-
-        if (
-            status.includes("master") ||
-            status.includes("understood") ||
-            status.includes("good")
-        ) {
-
-            conceptElement.classList.add("completed");
-
-            conceptElement.innerHTML =
-                `<span>✓</span>${concept.name}`;
-
-        }
-
-        else if (
-            status.includes("review") ||
-            status.includes("weak")
-        ) {
-
-            conceptElement.classList.add("warning");
-
-            conceptElement.innerHTML =
-                `<span>!</span>${concept.name}`;
-
-        }
-
-        else {
-
-            conceptElement.classList.add("missing");
-
-            conceptElement.innerHTML =
-                `<span>?</span>${concept.name}`;
-
-        }
+                const conceptElement =
+                    document.createElement("div");
 
 
-        map.appendChild(conceptElement);
+                conceptElement.className =
+                    "concept";
 
 
-        if (index < data.prerequisites.length - 1) {
+                const conceptStatus =
+                    String(
+                        concept.status || ""
+                    ).toLowerCase();
 
-            const connection =
-                document.createElement("div");
 
-            connection.className =
-                "connection";
+                // Mastered
 
-            map.appendChild(connection);
+                if (
+                    conceptStatus.includes("master") ||
+                    conceptStatus.includes("understood") ||
+                    conceptStatus.includes("good")
+                ) {
 
-        }
+                    conceptElement.classList.add(
+                        "completed"
+                    );
 
-    });
+                    conceptElement.innerHTML =
+                        `<span>✓</span>${escapeHTML(
+                            concept.name
+                        )}`;
 
+                }
+
+
+                // Weak / needs review
+
+                else if (
+                    conceptStatus.includes("review") ||
+                    conceptStatus.includes("weak")
+                ) {
+
+                    conceptElement.classList.add(
+                        "warning"
+                    );
+
+                    conceptElement.innerHTML =
+                        `<span>!</span>${escapeHTML(
+                            concept.name
+                        )}`;
+
+                }
+
+
+                // Missing
+
+                else {
+
+                    conceptElement.classList.add(
+                        "missing"
+                    );
+
+                    conceptElement.innerHTML =
+                        `<span>?</span>${escapeHTML(
+                            concept.name
+                        )}`;
+                }
+
+
+                map.appendChild(
+                    conceptElement
+                );
+
+
+                // Connection between concepts
+
+                if (
+                    index <
+                    data.prerequisites.length - 1
+                ) {
+
+                    const connection =
+                        document.createElement("div");
+
+                    connection.className =
+                        "connection";
+
+                    map.appendChild(
+                        connection
+                    );
+                }
+
+            }
+        );
+    }
 }
 
 
-/* ---------------------------
-   REPAIR SCREEN
----------------------------- */
+// ===============================
+// REPAIR BUTTON
+// ===============================
 
-document
-    .getElementById("repair-btn")
+document.getElementById("repair-btn")
     .addEventListener("click", () => {
 
         if (!currentDiagnosis) {
@@ -270,7 +338,13 @@ document
     });
 
 
+// ===============================
+// UPDATE REPAIR SCREEN
+// ===============================
+
 function updateRepairScreen(data) {
+
+    // MICRO LESSON
 
     const lessonCard =
         document.querySelector(".lesson-card");
@@ -283,15 +357,23 @@ function updateRepairScreen(data) {
         </div>
 
         <h2>
-            ${escapeHTML(data.likely_concept)}
+            ${escapeHTML(
+                data.likely_concept
+            )}
         </h2>
 
         <p>
-            ${escapeHTML(data.micro_lesson)}
+            ${escapeHTML(
+                data.micro_lesson
+            )}
         </p>
 
     `;
 
+
+    // ===========================
+    // QUICK CHECK
+    // ===========================
 
     const quizCard =
         document.querySelector(".quiz-card");
@@ -304,60 +386,80 @@ function updateRepairScreen(data) {
         </div>
 
         <h3 id="quiz-question">
-            ${escapeHTML(data.diagnostic_question)}
+            ${escapeHTML(
+                data.diagnostic_question
+            )}
         </h3>
 
-        <div class="quiz-options" id="quiz-options">
+        <div
+            class="quiz-options"
+            id="quiz-options">
         </div>
 
-        <div id="quiz-feedback"
-             class="quiz-feedback">
+        <div
+            id="quiz-feedback"
+            class="quiz-feedback">
         </div>
 
     `;
 
 
+    // Create answer buttons
+
     const optionsContainer =
-        document.getElementById("quiz-options");
+        document.getElementById(
+            "quiz-options"
+        );
 
 
-    data.diagnostic_options.forEach(
-        (option, index) => {
+    if (
+        data.diagnostic_options &&
+        Array.isArray(data.diagnostic_options)
+    ) {
 
-            const button =
-                document.createElement("button");
+        data.diagnostic_options.forEach(
+            (option, index) => {
 
-            button.className =
-                "quiz-option";
-
-            button.textContent =
-                option;
-
-
-            button.addEventListener(
-                "click",
-                () => {
-
-                    handleQuizAnswer(
-                        index,
-                        data.correct_option
+                const button =
+                    document.createElement(
+                        "button"
                     );
 
-                }
-            );
+
+                button.className =
+                    "quiz-option";
 
 
-            optionsContainer.appendChild(button);
+                button.textContent =
+                    option;
 
-        }
-    );
 
+                button.addEventListener(
+                    "click",
+                    () => {
+
+                        handleQuizAnswer(
+                            index,
+                            data.correct_option
+                        );
+
+                    }
+                );
+
+
+                optionsContainer.appendChild(
+                    button
+                );
+
+            }
+        );
+    }
 }
 
 
-/* ---------------------------
-   QUIZ
----------------------------- */
+// ===============================
+// QUIZ ANSWER
+// ===============================
 
 function handleQuizAnswer(
     selected,
@@ -365,18 +467,24 @@ function handleQuizAnswer(
 ) {
 
     const feedback =
-        document.getElementById("quiz-feedback");
+        document.getElementById(
+            "quiz-feedback"
+        );
 
 
     const options =
-        document.querySelectorAll(".quiz-option");
+        document.querySelectorAll(
+            ".quiz-option"
+        );
 
 
-    options.forEach(option => {
+    // Disable buttons temporarily
 
-        option.disabled = true;
-
-    });
+    options.forEach(
+        option => {
+            option.disabled = true;
+        }
+    );
 
 
     if (selected === correct) {
@@ -390,13 +498,14 @@ function handleQuizAnswer(
 
         setTimeout(() => {
 
-            showScreen("success-screen");
+            showScreen(
+                "success-screen"
+            );
 
         }, 1000);
 
-    }
 
-    else {
+    } else {
 
         feedback.textContent =
             "Not quite. Review the concept and try again.";
@@ -405,23 +514,20 @@ function handleQuizAnswer(
             "#ff6262";
 
 
-        options.forEach(option => {
-
-            option.disabled = false;
-
-        });
-
+        options.forEach(
+            option => {
+                option.disabled = false;
+            }
+        );
     }
-
 }
 
 
-/* ---------------------------
-   RETRY
----------------------------- */
+// ===============================
+// RETRY ORIGINAL PROBLEM
+// ===============================
 
-document
-    .getElementById("retry-btn")
+document.getElementById("retry-btn")
     .addEventListener("click", () => {
 
         showScreen("input-screen");
@@ -429,17 +535,21 @@ document
     });
 
 
-/* ---------------------------
-   SECURITY / HTML ESCAPING
----------------------------- */
+// ===============================
+// HTML SAFETY
+// ===============================
 
 function escapeHTML(value) {
 
     return String(value)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
 
+        .replaceAll("&", "&amp;")
+
+        .replaceAll("<", "&lt;")
+
+        .replaceAll(">", "&gt;")
+
+        .replaceAll('"', "&quot;")
+
+        .replaceAll("'", "&#039;");
 }
